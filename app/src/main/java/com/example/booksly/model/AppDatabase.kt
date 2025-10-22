@@ -1,10 +1,13 @@
-import androidx.room.Database
+package com.example.booksly.model
 
+
+import com.example.booksly.model.LibroDao
+import com.example.booksly.model.UsuarioDao
+import androidx.room.Database
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.booksly.model.Libro
-import com.example.booksly.model.Usuario
+
 
 
 @Database(entities = [Usuario::class, Libro::class], version = 1)

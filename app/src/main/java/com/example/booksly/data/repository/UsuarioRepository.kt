@@ -1,7 +1,8 @@
 package com.example.booksly.data.repository
 
-import UsuarioDao
+
 import com.example.booksly.model.Usuario
+import com.example.booksly.model.UsuarioDao
 
 class UsuarioRepository(private val usuarioDao: UsuarioDao) {
 
