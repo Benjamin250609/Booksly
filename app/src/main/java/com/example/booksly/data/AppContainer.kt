@@ -1,7 +1,9 @@
+package com.example.booksly.data
+
 import android.content.Context
 import com.example.booksly.data.repository.LibroRepository
 import com.example.booksly.data.repository.UsuarioRepository
-
+import com.example.booksly.model.AppDatabase
 
 interface AppContainer {
     val usuarioRepository: UsuarioRepository

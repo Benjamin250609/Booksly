@@ -1,7 +1,8 @@
 package com.example.booksly.data.repository
 
-import LibroDao
+
 import com.example.booksly.model.Libro
+import com.example.booksly.model.LibroDao
 import kotlinx.coroutines.flow.Flow
 
 class LibroRepository(private val libroDao: LibroDao) {

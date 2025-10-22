@@ -2,9 +2,10 @@ package com.example.booksly
 
 
 
-import AppContainer
-import AppDataContainer
 import android.app.Application
+import com.example.booksly.data.AppContainer
+import com.example.booksly.data.AppDataContainer
+
 
 
 class BookslyApplication : Application() {
