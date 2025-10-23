@@ -21,4 +21,18 @@ class LibroRepository(private val libroDao: LibroDao) {
     suspend fun actualizarLibro(libro: Libro) {
         libroDao.actualizar(libro)
     }
+
+    fun obtenerLibroPorId(libroId: Int): Flow<Libro?> {
+        return libroDao.obtenerLibroPorId(libroId)
+    }
+
+    fun contarLibrosFinalizados(): Flow<Int> {
+        return libroDao.contarLibrosFinalizados()
+    }
+
+    fun contarPaginasLeidas(): Flow<Int> {
+        return libroDao.contarPaginasLeidas()
+    }
+
+
 }

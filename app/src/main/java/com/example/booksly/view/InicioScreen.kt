@@ -38,9 +38,9 @@ import com.example.booksly.viewmodel.InicioViewModel
 @Composable
 fun InicioScreen(
     inicioViewModel: InicioViewModel,
-
-
     onNavigateToAddLibro: () -> Unit,
+    onNavigateToLibroDetalle: (Int) -> Unit
+
 
 ) {
     val libros by inicioViewModel.libros.collectAsState()
@@ -100,7 +100,7 @@ fun InicioScreen(
                 items(libros, key = { it.id }) { libro ->
                     LibroItemComposable(
                         libro = libro,
-                        onClick = {  }
+                        onClick = { onNavigateToLibroDetalle(libro.id) }
                     )
                 }
             }

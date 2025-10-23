@@ -25,11 +25,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.booksly.BookslyApplication
-import com.example.booksly.viewmodel.ViewModelFactory
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.booksly.navigation.AppScreen
+import com.example.booksly.viewmodel.AppViewModelProvider
 import com.example.booksly.viewmodel.InicioViewModel
-
+import com.example.booksly.viewmodel.ProgresoViewModel
 
 
 sealed class MainScreenItem(val route: String, val icon: ImageVector,val title:String ) {
@@ -52,7 +52,6 @@ val botonNavItems = listOf(
 @Composable
 fun MainScreen(app: BookslyApplication,rootNavController: NavHostController) {
     val navController = rememberNavController()
-    val factory = ViewModelFactory(app.container.usuarioRepository, app.container.libroRepository)
 
     Scaffold(
         bottomBar = {
@@ -85,16 +84,28 @@ fun MainScreen(app: BookslyApplication,rootNavController: NavHostController) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(MainScreenItem.Inicio.route) {
-                val inicioViewModel: InicioViewModel = viewModel(factory = factory)
+                val inicioViewModel: InicioViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 InicioScreen(
                     inicioViewModel = inicioViewModel,
                     onNavigateToAddLibro = {rootNavController.navigate(AppScreen.AddLibro.route)},
+                    onNavigateToLibroDetalle = { libroId ->
+                        rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
+                    }
                 )
             }
             composable(MainScreenItem.Buscar.route) { Text("Pantalla de Búsqueda Personal") }
             composable(MainScreenItem.Feed.route) { Text("Pantalla de Diario de Lectura") }
             composable(MainScreenItem.Calendario.route) { Text("Pantalla de Metas de Lectura") }
-            composable(MainScreenItem.Progreso.route) { Text("Pantalla de Estadísticas") }
+
+            composable(MainScreenItem.Progreso.route) {
+                val progresoViewModel: ProgresoViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                    ProgresoScreen(
+                        progresoViewModel = progresoViewModel,
+                        onNavigateToLibroDetalle = { libroId ->
+                            rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
+                        }
+                    )
+            }
         }
     }
 }
