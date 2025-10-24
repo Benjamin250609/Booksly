@@ -2,6 +2,7 @@ package com.example.booksly.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booksly.data.repository.PreferenciasRepository
 import com.example.booksly.data.repository.UsuarioRepository
 import com.example.booksly.model.LoginModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +11,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
-class LoginViewModel(private val usuarioRepository: UsuarioRepository) : ViewModel() {
+class LoginViewModel(
+    private val usuarioRepository: UsuarioRepository,
+    private val preferenciasRepository: PreferenciasRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginModel())
     val uiState = _uiState.asStateFlow()
@@ -56,6 +60,9 @@ class LoginViewModel(private val usuarioRepository: UsuarioRepository) : ViewMod
                 } else if (usuario.contrasena != contrasena) {
                     _uiState.update { it.copy(mensajeErrorGeneral = "Contraseña incorrecta") }
                 } else {
+                    // --- ACCIÓN CLAVE ---
+                    // Guardar el email del usuario que acaba de iniciar sesión
+                    preferenciasRepository.guardarUsuarioEmail(email)
                     _uiState.update { it.copy(loginExitoso = true) }
                 }
             } catch (e: Exception) {
