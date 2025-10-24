@@ -117,7 +117,7 @@ fun MainScreen(app: BookslyApplication, rootNavController: NavHostController) {
                 PerfilScreen(
                     perfilViewModel = perfilViewModel,
                     onLogout = {
-                        // Navega a la pantalla de login y limpia todo el backstack
+
                         rootNavController.navigate(AppScreen.Login.route) {
                             popUpTo(AppScreen.Main.route) {
                                 inclusive = true

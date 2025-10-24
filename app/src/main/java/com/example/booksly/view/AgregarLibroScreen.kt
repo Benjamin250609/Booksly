@@ -203,7 +203,7 @@ fun PortadaSelector(portada: String, onPortadaChange: (Uri?) -> Unit) {
             tempImageUri = newUri
             cameraLauncher.launch(newUri)
         } else {
-            // TODO: Mostrar un snackbar o diálogo explicando por qué se necesita el permiso
+
         }
     }
 
