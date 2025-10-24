@@ -10,9 +10,9 @@ import java.util.*
 object FotoUtils {
 
     fun crearUriTemporal(context: Context): Uri {
-        // Define el directorio donde se guardarán las imágenes (privado para la app)
-        val directorio = File(context.externalCacheDir, "fotos_temp")
-        directorio.mkdirs() // Crea el directorio si no existe
+        // Define el directorio donde se guardarán las imágenes, alineado con AgregarLibroScreen
+        val directorio = context.getExternalFilesDir("Pictures")
+        directorio?.mkdirs() // Crea el directorio si no existe
 
         // Crea un nombre de archivo único basado en la fecha y hora
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -26,7 +26,7 @@ object FotoUtils {
         // La autoridad debe coincidir con la definida en AndroidManifest.xml
         return FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            "${context.packageName}.provider", // Autoridad del provider
             archivo
         )
     }

@@ -42,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,7 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.booksly.ui.theme.BookslyBotonPrincipal
 import com.example.booksly.viewmodel.AgregarLibroViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +71,8 @@ fun AddLibroScreen(
 ) {
     val uiState by agregarLibroViewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(uiState.libroGuardado) {
         if (uiState.libroGuardado) {
@@ -86,7 +90,8 @@ fun AddLibroScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) } // Host para mostrar el Snackbar
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -108,7 +113,15 @@ fun AddLibroScreen(
             // --- Selector de Portada ---
             PortadaSelector(
                 portada = uiState.portada,
-                onPortadaChange = agregarLibroViewModel::onPortadaChange
+                onPortadaChange = agregarLibroViewModel::onPortadaChange,
+                onPermissionDenied = { // Acción cuando se deniega el permiso
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "El permiso de la cámara es necesario para tomar una foto.",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
             )
 
             // --- Campos del Formulario ---
@@ -183,7 +196,7 @@ fun AddLibroScreen(
 }
 
 @Composable
-fun PortadaSelector(portada: String, onPortadaChange: (Uri?) -> Unit) {
+fun PortadaSelector(portada: String, onPortadaChange: (Uri?) -> Unit, onPermissionDenied: () -> Unit) {
     val context = LocalContext.current
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -203,7 +216,7 @@ fun PortadaSelector(portada: String, onPortadaChange: (Uri?) -> Unit) {
             tempImageUri = newUri
             cameraLauncher.launch(newUri)
         } else {
-
+            onPermissionDenied()
         }
     }
 
