@@ -6,5 +6,10 @@ data class LibroDetalleModel(
     val errorPaginaInput: String? = null,
     val isLoading: Boolean = true,
     val errorCarga: String? = null,
-    val progresoGuardado: Boolean = false
+    val progresoGuardado: Boolean = false,
+    val showConfirmacionEliminar: Boolean = false,
+    val libroEliminado: Boolean = false,
+    // --- AÑADIDO PARA EL DIARIO ---
+    val notas: List<Nota> = emptyList(),
+    val nuevaNotaTexto: String = ""
 )

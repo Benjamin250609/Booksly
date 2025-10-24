@@ -1,12 +1,10 @@
 package com.example.booksly.view
 
-
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -23,34 +21,34 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.booksly.BookslyApplication
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.booksly.navigation.AppScreen
 import com.example.booksly.viewmodel.AppViewModelProvider
+import com.example.booksly.viewmodel.BuscarViewModel
 import com.example.booksly.viewmodel.InicioViewModel
+import com.example.booksly.viewmodel.PerfilViewModel
 import com.example.booksly.viewmodel.ProgresoViewModel
 
 
-sealed class MainScreenItem(val route: String, val icon: ImageVector,val title:String ) {
+sealed class MainScreenItem(val route: String, val icon: ImageVector, val title: String) {
     object Inicio : MainScreenItem("inicio", Icons.Filled.Home, "Inicio")
     object Buscar : MainScreenItem("buscar", Icons.Filled.Search, "Buscar")
-    object Feed : MainScreenItem("feed", Icons.Filled.List, "Diario")
-    object Calendario : MainScreenItem("calendario", Icons.Filled.CalendarMonth, "Metas")
     object Progreso : MainScreenItem("progreso", Icons.Filled.Book, "Progreso")
+    object Perfil : MainScreenItem("perfil", Icons.Filled.Person, "Perfil")
 }
 
 val botonNavItems = listOf(
     MainScreenItem.Inicio,
     MainScreenItem.Buscar,
-    MainScreenItem.Feed,
-    MainScreenItem.Calendario,
-    MainScreenItem.Progreso
+    MainScreenItem.Progreso,
+    MainScreenItem.Perfil
 )
 
 
 @Composable
-fun MainScreen(app: BookslyApplication,rootNavController: NavHostController) {
+fun MainScreen(app: BookslyApplication, rootNavController: NavHostController) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -87,26 +85,48 @@ fun MainScreen(app: BookslyApplication,rootNavController: NavHostController) {
                 val inicioViewModel: InicioViewModel = viewModel(factory = AppViewModelProvider.Factory)
                 InicioScreen(
                     inicioViewModel = inicioViewModel,
-                    onNavigateToAddLibro = {rootNavController.navigate(AppScreen.AddLibro.route)},
+                    onNavigateToAddLibro = { rootNavController.navigate(AppScreen.AddEditLibro.addRoute) },
                     onNavigateToLibroDetalle = { libroId ->
                         rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
                     }
                 )
             }
-            composable(MainScreenItem.Buscar.route) { Text("Pantalla de Búsqueda Personal") }
-            composable(MainScreenItem.Feed.route) { Text("Pantalla de Diario de Lectura") }
-            composable(MainScreenItem.Calendario.route) { Text("Pantalla de Metas de Lectura") }
+            composable(MainScreenItem.Buscar.route) {
+                val buscarViewModel: BuscarViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                BuscarScreen(
+                    buscarViewModel = buscarViewModel,
+                    onNavigateToLibroDetalle = { libroId ->
+                        rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
+                    }
+                )
+            }
 
             composable(MainScreenItem.Progreso.route) {
                 val progresoViewModel: ProgresoViewModel = viewModel(factory = AppViewModelProvider.Factory)
-                    ProgresoScreen(
-                        progresoViewModel = progresoViewModel,
-                        onNavigateToLibroDetalle = { libroId ->
-                            rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
+                ProgresoScreen(
+                    progresoViewModel = progresoViewModel,
+                    onNavigateToLibroDetalle = { libroId ->
+                        rootNavController.navigate(AppScreen.LibroDetalle.createRoute(libroId))
+                    }
+                )
+            }
+
+            // --- PANTALLA DE PERFIL (CON NAVEGACIÓN DE LOGOUT) ---
+            composable(MainScreenItem.Perfil.route) {
+                val perfilViewModel: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)
+                PerfilScreen(
+                    perfilViewModel = perfilViewModel,
+                    onLogout = {
+                        // Navega a la pantalla de login y limpia todo el backstack
+                        rootNavController.navigate(AppScreen.Login.route) {
+                            popUpTo(AppScreen.Main.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
-                    )
+                    }
+                )
             }
         }
     }
 }
-
