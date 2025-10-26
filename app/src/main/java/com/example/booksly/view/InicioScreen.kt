@@ -1,6 +1,5 @@
 package com.example.booksly.view
 
-import com.example.booksly.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,12 +40,20 @@ import com.example.booksly.ui.theme.BookslyBotonPrincipal
 import com.example.booksly.view.components.LibroPortada
 import com.example.booksly.viewmodel.InicioViewModel
 
+/**
+ * Pantalla principal de la aplicación que muestra la estantería de libros del usuario.
+ *
+ * @param inicioViewModel ViewModel que proporciona la lista de libros.
+ * @param onNavigateToAddLibro Callback para navegar a la pantalla de añadir libro.
+ * @param onNavigateToLibroDetalle Callback para navegar a la pantalla de detalle de un libro.
+ */
 @Composable
 fun InicioScreen(
     inicioViewModel: InicioViewModel,
     onNavigateToAddLibro: () -> Unit,
     onNavigateToLibroDetalle: (Int) -> Unit
 ) {
+    // Observa el flujo de libros del ViewModel y recompone la pantalla cuando cambia.
     val libros by inicioViewModel.libros.collectAsState()
 
     Column(
@@ -55,6 +62,7 @@ fun InicioScreen(
             .padding(16.dp)
     ) {
 
+        // --- Saludo y Encabezado ---
         Text(
             text = "¡Bienvenido de vuelta!",
             style = MaterialTheme.typography.headlineMedium
@@ -65,7 +73,7 @@ fun InicioScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // --- Encabezado de la Estantería ---
+        // --- Encabezado de la Estantería con botón de añadir ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -76,19 +84,11 @@ fun InicioScreen(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-
             Button(
                 onClick = { onNavigateToAddLibro() },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BookslyBotonPrincipal,
-                    contentColor = Color.White
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = BookslyBotonPrincipal, contentColor = Color.White)
             ) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = "Agregar Libro",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
+                Icon(Icons.Filled.Add, contentDescription = "Agregar Libro", modifier = Modifier.size(ButtonDefaults.IconSize))
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Text("Añadir")
             }
@@ -96,14 +96,15 @@ fun InicioScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // --- Contenido de la Estantería ---
+        // Se muestra un componente diferente dependiendo de si la lista de libros está vacía o no.
         if (libros.isEmpty()) {
             EstanteriaVaciaComposable(onNavigateToAddLibro)
         } else {
+            // Cuadrícula perezosa y adaptable para mostrar los libros de forma eficiente.
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 130.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
             ) {
                 items(libros, key = { it.id }) { libro ->
                     LibroItemComposable(
@@ -116,27 +117,27 @@ fun InicioScreen(
     }
 }
 
-// --- COMPOSABLE PARA UN LIBRO EN LA ESTANTERÍA (MEJORADO) ---
+/**
+ * Composable que representa un único libro en la estantería.
+ */
 @Composable
 fun LibroItemComposable(libro: Libro, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Sombra sutil
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             LibroPortada(
                 portadaUrl = libro.portada,
                 titulo = libro.titulo,
-                modifier = Modifier
-                    .height(220.dp)
-                    .fillMaxWidth()
+                modifier = Modifier.height(220.dp).fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = libro.titulo,
-                style = MaterialTheme.typography.bodyMedium, // Texto más legible
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -148,13 +149,13 @@ fun LibroItemComposable(libro: Libro, onClick: () -> Unit) {
     }
 }
 
-// --- COMPOSABLE PARA CUANDO NO HAY LIBROS (MEJORADO) ---
+/**
+ * Composable que se muestra cuando la estantería del usuario está vacía.
+ */
 @Composable
 fun EstanteriaVaciaComposable(onNavigateToAddLibro: () -> Unit) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp),
+        modifier = Modifier.fillMaxWidth().height(250.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -173,10 +174,7 @@ fun EstanteriaVaciaComposable(onNavigateToAddLibro: () -> Unit) {
             )
             Button(
                 onClick = onNavigateToAddLibro,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BookslyBotonPrincipal,
-                    contentColor = Color.White
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = BookslyBotonPrincipal, contentColor = Color.White)
             ) {
                 Text("¡Añade tu primer libro!")
             }

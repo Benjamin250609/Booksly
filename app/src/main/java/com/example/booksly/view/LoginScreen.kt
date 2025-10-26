@@ -40,21 +40,32 @@ import androidx.compose.ui.unit.dp
 import com.example.booksly.ui.theme.BookslyBotonPrincipal
 import com.example.booksly.viewmodel.LoginViewModel
 
+/**
+ * Pantalla de inicio de sesión.
+ *
+ * @param loginViewModel El ViewModel que maneja la lógica de inicio de sesión.
+ * @param onLoginSuccess Callback que se ejecuta cuando el inicio de sesión es exitoso.
+ * @param onNavigateToRegistro Callback para navegar a la pantalla de registro.
+ */
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel,
     onLoginSuccess: () -> Unit,
     onNavigateToRegistro: () -> Unit
 ) {
+    // Recogemos el estado de la UI del ViewModel.
     val uiState by loginViewModel.uiState.collectAsState()
+    // Obtenemos el gestor de foco para poder ocultar el teclado.
     val focusManager = LocalFocusManager.current
 
+    // Efecto que se lanza cuando el estado de loginExitoso cambia a true.
     LaunchedEffect(uiState.loginExitoso) {
         if (uiState.loginExitoso) {
             onLoginSuccess()
         }
     }
 
+    // Layout principal de la pantalla.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,7 +73,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- Título ---
+        // --- Título y subtítulo ---
         Text(
             text = "Booksly",
             style = MaterialTheme.typography.displayMedium,
@@ -113,6 +124,7 @@ fun LoginScreen(
             })
         )
 
+        // Muestra un mensaje de error general si existe.
         uiState.mensajeErrorGeneral?.let {
             Text(
                 text = it,
@@ -137,6 +149,7 @@ fun LoginScreen(
                 contentColor = Color.White
             )
         ) {
+            // Muestra un indicador de carga si se está procesando el login.
             if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),

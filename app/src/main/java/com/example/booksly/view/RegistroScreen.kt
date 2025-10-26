@@ -34,6 +34,13 @@ import androidx.compose.ui.unit.dp
 import com.example.booksly.ui.theme.BookslyBotonPrincipal
 import com.example.booksly.viewmodel.RegistroViewModel
 
+/**
+ * Pantalla para el registro de nuevos usuarios.
+ *
+ * @param registroViewModel ViewModel para la lógica de registro.
+ * @param onRegistroSuccess Callback que se ejecuta al registrarse con éxito.
+ * @param onNavigateBack Callback para navegar a la pantalla anterior.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreen(
@@ -41,10 +48,12 @@ fun RegistroScreen(
     onRegistroSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    // Recogemos el estado de la UI del ViewModel.
     val uiState by registroViewModel.uiState.collectAsState()
+    // Obtenemos el gestor de foco para poder ocultar el teclado.
     val focusManager = LocalFocusManager.current
 
-    // Efecto para navegar hacia atrás cuando el registro es exitoso
+    // Cuando el registro es exitoso, se ejecuta el callback para navegar.
     LaunchedEffect(uiState.registroExitoso) {
         if (uiState.registroExitoso) {
             onRegistroSuccess()
@@ -53,6 +62,7 @@ fun RegistroScreen(
 
     Scaffold(
         topBar = {
+            // Barra de navegación superior con título y botón para volver atrás.
             TopAppBar(
                 title = { Text("Crear Nueva Cuenta") },
                 navigationIcon = {
@@ -63,6 +73,7 @@ fun RegistroScreen(
             )
         }
     ) { paddingValues ->
+        // Columna principal que permite el scroll.
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,7 +137,8 @@ fun RegistroScreen(
                     registroViewModel.onRegistroClick()
                 })
             )
-
+            
+            // Muestra un error general si ocurre algún problema.
             uiState.mensajeErrorGeneral?.let {
                 Text(
                     text = it,
@@ -136,7 +148,7 @@ fun RegistroScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Empuja el botón hacia abajo
+            Spacer(modifier = Modifier.weight(1f)) // Empuja el botón hacia la parte inferior.
 
             // --- Botón de Registrarse ---
             Button(
@@ -145,13 +157,14 @@ fun RegistroScreen(
                     registroViewModel.onRegistroClick()
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = !uiState.isLoading,
+                enabled = !uiState.isLoading, // Se deshabilita durante la carga.
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BookslyBotonPrincipal,
                     contentColor = Color.White
                 )
             ) {
                 if (uiState.isLoading) {
+                    // Muestra un indicador de progreso durante el registro.
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
