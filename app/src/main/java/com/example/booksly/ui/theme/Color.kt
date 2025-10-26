@@ -2,10 +2,14 @@ package com.example.booksly.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Paleta de colores personalizada basada en tu CSS
+val BookslyFondo = Color(0xFFFCF6F8)
+val BookslyBlanco = Color(0xFFFFFFFF)
+val BookslyPrimario = Color(0xFFFF8FA3)
+val BookslySecundario = Color(0xFFFF758F)
+val BookslyTextoPrincipal = Color(0xFF212529)
+val BookslyTextoSecundario = Color(0xFF6C757D)
+val BookslyBorde = Color(0xFFFCEBEB)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Nuevo color para los botones principales
+val BookslyBotonPrincipal = Color(182, 10, 81, 128) // rgba(182, 10, 81, 0.5)

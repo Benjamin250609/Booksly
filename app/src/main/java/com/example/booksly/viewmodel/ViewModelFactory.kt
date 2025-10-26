@@ -1,36 +1,67 @@
 package com.example.booksly.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.booksly.data.repository.LibroRepository
-import com.example.booksly.data.repository.UsuarioRepository
-import kotlin.jvm.java
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.booksly.BookslyApplication
 
-class ViewModelFactory(
-    private val usuarioRepository: UsuarioRepository,
-    private val libroRepository: LibroRepository
-) : ViewModelProvider.Factory {
+object AppViewModelProvider {
+    val Factory = viewModelFactory {
+        // Inicializador para LoginViewModel
+        initializer {
+            LoginViewModel(
+                usuarioRepository = bookslyApplication().container.usuarioRepository,
+                preferenciasRepository = bookslyApplication().container.preferenciasRepository
+            )
+        }
+        // Inicializador para RegistroViewModel
+        initializer {
+            RegistroViewModel(bookslyApplication().container.usuarioRepository)
+        }
+        // Inicializador para InicioViewModel
+        initializer {
+            InicioViewModel(bookslyApplication().container.libroRepository)
+        }
+        
+        // --- INICIALIZADOR PARA AgregarLibroViewModel (ACTUALIZADO) ---
+        initializer {
+            val savedStateHandle = createSavedStateHandle()
+            AgregarLibroViewModel(
+                libroRepository = bookslyApplication().container.libroRepository,
+                savedStateHandle = savedStateHandle,
+                application = bookslyApplication()
+            )
+        }
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(usuarioRepository) as T
+        // --- INICIALIZADOR PARA LibroDetalleViewModel (ACTUALIZADO) ---
+        initializer {
+            val savedStateHandle = createSavedStateHandle()
+            LibroDetalleViewModel(
+                libroRepository = bookslyApplication().container.libroRepository,
+                notaRepository = bookslyApplication().container.notaRepository,
+                savedStateHandle = savedStateHandle
+            )
         }
-        // Comprueba si se pide RegistroViewModel
-        if (modelClass.isAssignableFrom(RegistroViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return RegistroViewModel(usuarioRepository) as T
+        initializer {
+            BuscarViewModel(bookslyApplication().container.libroRepository)
         }
-        // Comprueba si se pide InicioViewModel
-        if (modelClass.isAssignableFrom(InicioViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return InicioViewModel(libroRepository) as T
+
+        // --- INICIALIZADOR PARA PerfilViewModel (ACTUALIZADO) ---
+        initializer {
+            PerfilViewModel(
+                preferenciasRepository = bookslyApplication().container.preferenciasRepository,
+                usuarioRepository = bookslyApplication().container.usuarioRepository,
+                libroRepository = bookslyApplication().container.libroRepository
+            )
         }
-        if (modelClass.isAssignableFrom(AgregarLibroViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AgregarLibroViewModel(libroRepository) as T
+
+        initializer {
+            ProgresoViewModel(bookslyApplication().container.libroRepository)
         }
-        // Si no es ninguno de los conocidos, lanza un error
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
+
+fun CreationExtras.bookslyApplication(): BookslyApplication =
+    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as BookslyApplication)
