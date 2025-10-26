@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,12 +28,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.booksly.viewmodel.BuscarViewModel
 
+/**
+ * Pantalla que permite al usuario buscar libros en su estantería.
+ *
+ * @param buscarViewModel ViewModel que gestiona la lógica de búsqueda.
+ * @param onNavigateToLibroDetalle Callback para navegar a la pantalla de detalle de un libro.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BuscarScreen(
     buscarViewModel: BuscarViewModel,
     onNavigateToLibroDetalle: (Int) -> Unit
 ) {
+    // Observa el estado de la UI desde el ViewModel.
     val uiState by buscarViewModel.uiState.collectAsState()
 
     Scaffold(
@@ -51,7 +56,7 @@ fun BuscarScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Barra de Búsqueda Mejorada ---
+            // --- Barra de Búsqueda ---
             OutlinedTextField(
                 value = uiState.terminoBusqueda,
                 onValueChange = buscarViewModel::onTerminoBusquedaChange,
@@ -59,6 +64,7 @@ fun BuscarScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Buscar") },
+                // Icono para limpiar el campo de búsqueda, aparece solo si hay texto.
                 trailingIcon = {
                     if (uiState.terminoBusqueda.isNotEmpty()) {
                         IconButton(onClick = { buscarViewModel.onTerminoBusquedaChange("") }) {
@@ -70,23 +76,28 @@ fun BuscarScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Resultados ---
+            // --- Área de Resultados ---
+            // El contenido cambia según el estado de la búsqueda.
             when {
+                // Si el término de búsqueda está vacío, muestra un mensaje inicial.
                 uiState.terminoBusqueda.isBlank() -> {
                     EmptyState(mensaje = "Escribe algo para encontrar libros en tu estantería.")
                 }
+                // Si se buscó pero no hubo resultados, muestra un mensaje informativo.
                 uiState.sinResultados -> {
                     EmptyState(mensaje = "No se encontraron libros para \"${uiState.terminoBusqueda}\".")
                 }
+                // Si hay resultados, muestra la lista.
                 else -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
-                        items(uiState.resultados, key = { it.id }) {
+                        items(uiState.resultados, key = { it.id }) { libro ->
+                            // Se reutiliza el Composable LibroProgresoItem para mostrar cada resultado.
                             LibroProgresoItem(
-                                libro = it,
-                                modifier = Modifier.clickable { onNavigateToLibroDetalle(it.id) }
+                                libro = libro,
+                                modifier = Modifier.clickable { onNavigateToLibroDetalle(libro.id) }
                             )
                         }
                     }

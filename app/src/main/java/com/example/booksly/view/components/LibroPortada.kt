@@ -30,7 +30,7 @@ fun LibroPortada(
                 .data(portadaUrl)
                 .crossfade(true)
                 .placeholder(R.drawable.placeholder_book) // Un placeholder genérico mientras carga
-                .error(R.drawable.placeholder_book_error)       // Un placeholder si la URL falla
+                .error(R.drawable.placeholder_book_error)
                 .build(),
             contentDescription = "Portada de $titulo",
             modifier = modifier,
