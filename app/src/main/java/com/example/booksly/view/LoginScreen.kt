@@ -1,6 +1,5 @@
 package com.example.booksly.view
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,37 +34,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.booksly.ui.theme.BookslyBotonPrincipal
+import com.example.booksly.viewmodel.LoginUiState
 import com.example.booksly.viewmodel.LoginViewModel
 
-/**
- * Pantalla de inicio de sesión.
- *
- * @param loginViewModel El ViewModel que maneja la lógica de inicio de sesión.
- * @param onLoginSuccess Callback que se ejecuta cuando el inicio de sesión es exitoso.
- * @param onNavigateToRegistro Callback para navegar a la pantalla de registro.
- */
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel,
     onLoginSuccess: () -> Unit,
     onNavigateToRegistro: () -> Unit
 ) {
-    // Recogemos el estado de la UI del ViewModel.
-    val uiState by loginViewModel.uiState.collectAsState()
-    // Obtenemos el gestor de foco para poder ocultar el teclado.
+    val loginState by loginViewModel.uiState.collectAsState()
+    val email by loginViewModel.email.collectAsState()
+    val password by loginViewModel.password.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    // Efecto que se lanza cuando el estado de loginExitoso cambia a true.
-    LaunchedEffect(uiState.loginExitoso) {
-        if (uiState.loginExitoso) {
+    // Efecto que reacciona al estado de éxito
+    LaunchedEffect(loginState) {
+        if (loginState is LoginUiState.Success) {
             onLoginSuccess()
+            loginViewModel.resetState() // Resetea el estado para evitar re-navegación
         }
     }
 
-    // Layout principal de la pantalla.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,7 +65,6 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- Título y subtítulo ---
         Text(
             text = "Booksly",
             style = MaterialTheme.typography.displayMedium,
@@ -86,15 +77,13 @@ fun LoginScreen(
             modifier = Modifier.padding(bottom = 48.dp)
         )
 
-        // --- Formulario de Login ---
+        // Campo de Email
         OutlinedTextField(
-            value = uiState.email,
-            onValueChange = loginViewModel::onEmailChange,
+            value = email,
+            onValueChange = { loginViewModel.onEmailChange(it) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Correo Electrónico") },
             leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) },
-            isError = uiState.emailError != null,
-            supportingText = { uiState.emailError?.let { Text(it) } },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -104,30 +93,29 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Campo de Contraseña
         OutlinedTextField(
-            value = uiState.contrasena,
-            onValueChange = loginViewModel::onContrasenaChange,
+            value = password,
+            onValueChange = { loginViewModel.onPasswordChange(it) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Contraseña") },
             leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
-            isError = uiState.contrasenaError != null,
-            supportingText = { uiState.contrasenaError?.let { Text(it) } },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
-            keyboardActions = KeyboardActions(onDone = { 
+            keyboardActions = KeyboardActions(onDone = {
                 focusManager.clearFocus()
-                loginViewModel.onLoginClick()
+                loginViewModel.onLoginClicked()
             })
         )
 
-        // Muestra un mensaje de error general si existe.
-        uiState.mensajeErrorGeneral?.let {
+        // Muestra de errores
+        if (loginState is LoginUiState.Error) {
             Text(
-                text = it,
+                text = (loginState as LoginUiState.Error).message,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 16.dp)
@@ -136,21 +124,20 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- Botón de Iniciar Sesión ---
+        // Botón de Iniciar Sesión
         Button(
-            onClick = { 
+            onClick = {
                 focusManager.clearFocus()
-                loginViewModel.onLoginClick() 
+                loginViewModel.onLoginClicked()
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = !uiState.isLoading,
+            enabled = loginState !is LoginUiState.Loading,
             colors = ButtonDefaults.buttonColors(
                 containerColor = BookslyBotonPrincipal,
                 contentColor = Color.White
             )
         ) {
-            // Muestra un indicador de carga si se está procesando el login.
-            if (uiState.isLoading) {
+            if (loginState is LoginUiState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -163,10 +150,10 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Navegación a Registro ---
+        // Navegación a Registro
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("¿Aún no tienes cuenta?")
-            TextButton(onClick = onNavigateToRegistro) {
+            TextButton(onClick = onNavigateToRegistro, enabled = loginState !is LoginUiState.Loading) {
                 Text("Regístrate")
             }
         }

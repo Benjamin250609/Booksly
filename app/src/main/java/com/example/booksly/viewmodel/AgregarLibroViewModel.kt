@@ -7,7 +7,11 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booksly.data.remote.RetrofitClient
+import com.example.booksly.data.remote.VolumeItem
 import com.example.booksly.data.repository.LibroRepository
+import com.example.booksly.data.repository.PreferenciasRepository
+import com.example.booksly.data.repository.UsuarioRepository
 import com.example.booksly.model.AgregarLibroModel
 import com.example.booksly.model.Libro
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,12 +24,10 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 
-/**
- * ViewModel para la pantalla de añadir o editar un libro.
- * Gestiona el estado de la UI y la lógica de negocio para crear o actualizar un libro.
- */
 class AgregarLibroViewModel(
     private val libroRepository: LibroRepository,
+    private val usuarioRepository: UsuarioRepository,
+    private val preferenciasRepository: PreferenciasRepository,
     savedStateHandle: SavedStateHandle,
     private val application: Application
 ) : ViewModel() {
@@ -33,18 +35,20 @@ class AgregarLibroViewModel(
     private val _uiState = MutableStateFlow(AgregarLibroModel())
     val uiState = _uiState.asStateFlow()
 
-    // Obtiene el ID del libro de los argumentos de navegación. Será nulo si es un libro nuevo.
+    private val _searchResults = MutableStateFlow<List<VolumeItem>>(emptyList())
+    val searchResults = _searchResults.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching = _isSearching.asStateFlow()
+
     private val libroId: Int? = savedStateHandle["libroId"]
 
     init {
-        // Si el libroId no es nulo y es diferente de -1, estamos en modo edición.
         if (libroId != null && libroId != -1) {
             _uiState.update { it.copy(isEditing = true) }
             viewModelScope.launch {
-                // Cargamos los datos del libro existente desde el repositorio.
                 val libro = libroRepository.obtenerLibroPorId(libroId).first()
                 if (libro != null) {
-                    // Actualizamos el estado de la UI con los datos del libro.
                     _uiState.update {
                         it.copy(
                             titulo = libro.titulo,
@@ -59,7 +63,46 @@ class AgregarLibroViewModel(
         }
     }
 
-    // --- Funciones para actualizar el estado desde la UI ---
+    fun searchBooks(query: String) {
+        viewModelScope.launch {
+            if (query.isBlank()) {
+                _searchResults.value = emptyList()
+                return@launch
+            }
+            _isSearching.value = true
+            try {
+                val response = RetrofitClient.instance.searchBooks(query)
+                if (response.isSuccessful) {
+                    _searchResults.value = response.body()?.items ?: emptyList()
+                } else {
+                    _searchResults.value = emptyList()
+                }
+            } catch (e: Exception) {
+                _searchResults.value = emptyList()
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
+    fun onBookSelected(book: VolumeItem) {
+        val bookInfo = book.volumeInfo
+        val secureThumbnailUrl = bookInfo.imageLinks?.thumbnailUrl?.replace("http://", "https://") ?: ""
+
+        _uiState.update {
+            it.copy(
+                titulo = bookInfo.title ?: "",
+                autor = bookInfo.authors?.joinToString(", ") ?: "",
+                totalPaginas = bookInfo.pageCount?.toString() ?: "",
+                portada = secureThumbnailUrl,
+                errorTitulo = null,
+                errorAutor = null,
+                errorTotalPaginas = null
+            )
+        }
+        _searchResults.value = emptyList()
+    }
+
     fun onTituloChange(valor: String) {
         _uiState.update { it.copy(titulo = valor, errorTitulo = null) }
     }
@@ -69,16 +112,11 @@ class AgregarLibroViewModel(
     }
 
     fun onTotalPaginasChange(valor: String) {
-        // Solo permite la entrada de dígitos.
         if (valor.all { it.isDigit() }) {
             _uiState.update { it.copy(totalPaginas = valor, errorTotalPaginas = null) }
         }
     }
 
-    /**
-     * Se llama cuando el usuario selecciona o cambia la imagen de portada.
-     * Guarda la imagen en el almacenamiento interno y actualiza el estado con la ruta.
-     */
     fun onPortadaChange(uri: Uri?) {
         if (uri == null) {
             _uiState.update { it.copy(portada = "") }
@@ -91,10 +129,6 @@ class AgregarLibroViewModel(
         }
     }
 
-    /**
-     * Guarda una imagen desde una URI en el almacenamiento interno de la app
-     * Devuelve la ruta absoluta del archivo guardado.
-     */
     private fun saveImageToInternalStorage(uri: Uri): String? {
         return try {
             val inputStream = application.contentResolver.openInputStream(uri)
@@ -116,30 +150,44 @@ class AgregarLibroViewModel(
         }
     }
     
-    /**
-     * Valida los campos y guarda o actualiza el libro en la base de datos.
-     */
     fun guardarLibro() {
-        // --- Validaciones (simplificadas) ---
         val totalPaginas = _uiState.value.totalPaginas.toIntOrNull()
-        if (totalPaginas == null) { /* ...manejar error... */ return }
+        if (_uiState.value.titulo.isBlank()) {
+            _uiState.update { it.copy(errorTitulo = "El título no puede estar vacío") }
+            return
+        }
+        if (_uiState.value.autor.isBlank()) {
+            _uiState.update { it.copy(errorAutor = "El autor no puede estar vacío") }
+            return
+        }
+        if (totalPaginas == null || totalPaginas <= 0) {
+            _uiState.update { it.copy(errorTotalPaginas = "Número de páginas inválido") }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                val email = preferenciasRepository.usuarioEmailFlow.first()
+                val usuario = usuarioRepository.getUsuarioPorEmail(email ?: "")
+
+                if (usuario == null) {
+                    _uiState.update { it.copy(errorGeneral = "Error: No se pudo encontrar el usuario actual") }
+                    return@launch
+                }
+
                 val libroActual = _uiState.value.libro
                 val nuevoLibro = Libro(
                     id = if (_uiState.value.isEditing) libroId!! else 0,
+                    userId = usuario.id.toLong(),
                     titulo = _uiState.value.titulo,
                     autor = _uiState.value.autor,
                     portada = _uiState.value.portada,
                     totalPaginas = totalPaginas,
-                    // Mantiene los valores existentes si se está editando.
                     paginaActual = if (_uiState.value.isEditing) libroActual?.paginaActual ?: 0 else 0,
                     estado = if (_uiState.value.isEditing) libroActual?.estado ?: "leyendo" else "leyendo"
                 )
 
-                // Llama al método correspondiente del repositorio.
                 if (_uiState.value.isEditing) {
                     libroRepository.actualizarLibro(nuevoLibro)
                 } else {

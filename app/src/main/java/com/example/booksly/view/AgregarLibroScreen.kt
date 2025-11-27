@@ -8,17 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,23 +19,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
 import androidx.compose.material.icons.outlined.Numbers
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import com.example.booksly.data.remote.VolumeItem
 import com.example.booksly.ui.theme.BookslyBotonPrincipal
 import com.example.booksly.viewmodel.AgregarLibroViewModel
 import kotlinx.coroutines.launch
@@ -70,9 +53,13 @@ fun AddLibroScreen(
     onNavigateBack: () -> Unit
 ) {
     val uiState by agregarLibroViewModel.uiState.collectAsState()
+    val searchResults by agregarLibroViewModel.searchResults.collectAsState()
+    val isSearching by agregarLibroViewModel.isSearching.collectAsState()
+
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.libroGuardado) {
         if (uiState.libroGuardado) {
@@ -91,7 +78,7 @@ fun AddLibroScreen(
                 }
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) } // Host para mostrar el Snackbar
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -102,19 +89,72 @@ fun AddLibroScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                if (uiState.isEditing) "Modifica los detalles de tu libro." else "Completa los datos del libro que quieres añadir a tu estantería.",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
+            if (!uiState.isEditing) {
+                Text(
+                    "Busca un libro para autocompletar o ingresa los datos manualmente.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // --- Barra de búsqueda ---
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = {
+                        searchQuery = it
+                        agregarLibroViewModel.searchBooks(it)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Buscar por título o ISBN") },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = {
+                                searchQuery = ""
+                                agregarLibroViewModel.searchBooks("") // Limpia la búsqueda
+                            }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Limpiar búsqueda")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                )
+
+                // --- Resultados de la búsqueda ---
+                if (isSearching) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp))
+                } else if (searchResults.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Resultados de la búsqueda:", style = MaterialTheme.typography.titleMedium)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp) // Altura fija para la lista de resultados
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                    ) {
+                        items(searchResults) { book ->
+                            SearchResultItem(book = book, onBookSelected = {
+                                agregarLibroViewModel.onBookSelected(it)
+                                searchQuery = "" // Limpia la query de búsqueda
+                                focusManager.clearFocus()
+                            })
+                            Divider()
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Divider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
 
             // --- Selector de Portada ---
             PortadaSelector(
                 portada = uiState.portada,
                 onPortadaChange = agregarLibroViewModel::onPortadaChange,
-                onPermissionDenied = { // Acción cuando se deniega el permiso
+                onPermissionDenied = {
                     scope.launch {
                         snackbarHostState.showSnackbar(
                             message = "El permiso de la cámara es necesario para tomar una foto.",
@@ -162,7 +202,7 @@ fun AddLibroScreen(
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f, fill = false))
 
             // --- Botón de Guardar ---
             Button(
@@ -170,7 +210,9 @@ fun AddLibroScreen(
                     focusManager.clearFocus()
                     agregarLibroViewModel.guardarLibro()
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 enabled = !uiState.isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = BookslyBotonPrincipal, contentColor = Color.White)
             ) {
@@ -188,12 +230,35 @@ fun AddLibroScreen(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 8.dp)
                 )
             }
         }
     }
 }
+
+@Composable
+fun SearchResultItem(book: VolumeItem, onBookSelected: (VolumeItem) -> Unit) {
+    ListItem(
+        headlineContent = { Text(book.volumeInfo.title ?: "Sin título") },
+        supportingContent = { Text(book.volumeInfo.authors?.joinToString(", ") ?: "Autor desconocido") },
+        leadingContent = {
+            AsyncImage(
+                model = book.volumeInfo.imageLinks?.thumbnailUrl?.replace("http://", "https://"),
+                contentDescription = "Portada",
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop
+            )
+        },
+        modifier = Modifier.clickable { onBookSelected(book) }
+    )
+}
+
 
 @Composable
 fun PortadaSelector(portada: String, onPortadaChange: (Uri?) -> Unit, onPermissionDenied: () -> Unit) {

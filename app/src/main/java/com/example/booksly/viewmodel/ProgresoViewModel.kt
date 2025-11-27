@@ -3,16 +3,18 @@ package com.example.booksly.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booksly.data.repository.LibroRepository
+import com.example.booksly.data.repository.PreferenciasRepository
+import com.example.booksly.data.repository.UsuarioRepository
 import com.example.booksly.model.Libro
+import com.example.booksly.model.Usuario
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine // Para combinar múltiples flows
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
-/**
- * Data class que representa el estado de la UI para la pantalla de Progreso.
- * Contiene todas las estadísticas que se mostrarán al usuario.
- */
 data class EstadisticasUiState(
     val librosFinalizadosCount: Int = 0,
     val totalPaginasLeidas: Int = 0,
@@ -20,39 +22,38 @@ data class EstadisticasUiState(
     val librosFinalizadosList: List<Libro> = emptyList()
 )
 
-/**
- * ViewModel para la pantalla de Progreso.
- * Recopila y calcula estadísticas de lectura del usuario.
- */
-class ProgresoViewModel(private val libroRepository: LibroRepository) : ViewModel() {
+@OptIn(ExperimentalCoroutinesApi::class)
+class ProgresoViewModel(
+    private val libroRepository: LibroRepository,
+    private val usuarioRepository: UsuarioRepository,
+    private val preferenciasRepository: PreferenciasRepository
+) : ViewModel() {
 
-    /**
-     * Un StateFlow que emite el estado completo de las estadísticas de la UI.
-     * Se crea combinando varios flujos del repositorio, lo que lo hace muy reactivo y eficiente.
-     */
-    val estadisticasUiState: StateFlow<EstadisticasUiState> = combine(
-        // Flujos de origen que se van a combinar:
-        libroRepository.contarLibrosFinalizados(),
-        libroRepository.contarPaginasLeidas(),
-        libroRepository.obtenerTodosLosLibros()
-    ) { finalizadosCount, paginasLeidas, todosLosLibros ->
-        // Este bloque se ejecuta cada vez que cualquiera de los flujos de origen emite un nuevo valor.
+    private val usuarioFlow: StateFlow<Usuario?> = preferenciasRepository.usuarioEmailFlow.flatMapLatest { email ->
+        if (email == null) flowOf(null) else usuarioRepository.getUsuarioPorEmailFlow(email)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-        // Filtramos la lista de todos los libros para obtener los que están en curso y los finalizados.
-        val enCurso = todosLosLibros.filter { it.estado == "leyendo" }
-        val finalizados = todosLosLibros.filter { it.estado == "finalizado" }
-
-        // Creamos el objeto de estado con los datos combinados y calculados.
-        EstadisticasUiState(
-            librosFinalizadosCount = finalizadosCount,
-            totalPaginasLeidas = paginasLeidas, // El DAO ya devuelve 0 si es nulo gracias a COALESCE.
-            librosEnCurso = enCurso,
-            librosFinalizadosList = finalizados
-        )
+    val estadisticasUiState: StateFlow<EstadisticasUiState> = usuarioFlow.flatMapLatest { usuario ->
+        if (usuario == null) {
+            flowOf(EstadisticasUiState())
+        } else {
+            combine(
+                libroRepository.contarLibrosFinalizados(usuario.id.toLong()),
+                libroRepository.contarPaginasLeidas(usuario.id.toLong()),
+                libroRepository.obtenerLibrosPorEstado(usuario.id.toLong(), "leyendo"),
+                libroRepository.obtenerLibrosPorEstado(usuario.id.toLong(), "finalizado")
+            ) { finalizadosCount, paginasLeidas, enCurso, finalizados ->
+                EstadisticasUiState(
+                    librosFinalizadosCount = finalizadosCount,
+                    totalPaginasLeidas = paginasLeidas,
+                    librosEnCurso = enCurso,
+                    librosFinalizadosList = finalizados
+                )
+            }
+        }
     }.stateIn(
-        // Convertimos el flujo combinado en un StateFlow.
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000L),
-        initialValue = EstadisticasUiState() // Estado inicial mientras se cargan los datos.
+        initialValue = EstadisticasUiState()
     )
 }

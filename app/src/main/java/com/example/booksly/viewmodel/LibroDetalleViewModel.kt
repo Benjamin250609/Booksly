@@ -78,7 +78,7 @@ class LibroDetalleViewModel(
             val libroActualizado = libroActual.copy(
                 paginaActual = nuevaPagina,
                 // Si la página actual es la última, el estado cambia a "finalizado".
-                estado = if (nuevaPagina == libroActual.totalPaginas) "leído" else "leyendo"
+                estado = if (nuevaPagina == libroActual.totalPaginas) "finalizado" else "leyendo"
             )
             libroRepository.actualizarLibro(libroActualizado)
             _uiState.update { it.copy(progresoGuardado = true, errorPaginaInput = null) }

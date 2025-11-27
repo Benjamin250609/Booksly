@@ -71,6 +71,7 @@ dependencies {
 
     // --- Persistencia de Datos (Room y DataStore) ---
     implementation(libs.room.runtime)
+    implementation(libs.transport.runtime)
     kapt(libs.room.compiler) // Procesador de anotaciones para Room.
     implementation(libs.room.ktx) // Extensiones de Kotlin para corrutinas con Room.
     implementation(libs.datastore.prefs) // Para almacenamiento de datos clave-valor.

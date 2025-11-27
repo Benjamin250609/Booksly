@@ -3,27 +3,45 @@ package com.example.booksly.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booksly.data.repository.LibroRepository
+import com.example.booksly.data.repository.PreferenciasRepository
+import com.example.booksly.data.repository.UsuarioRepository
 import com.example.booksly.model.Libro
+import com.example.booksly.model.Usuario
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
-/**
- * ViewModel para la pantalla de Inicio (la estantería de libros).
- * Su principal responsabilidad es proporcionar la lista de libros a la UI.
- */
-class InicioViewModel(libroRepository: LibroRepository) : ViewModel() {
+@OptIn(ExperimentalCoroutinesApi::class)
+class InicioViewModel(
+    private val libroRepository: LibroRepository,
+    private val usuarioRepository: UsuarioRepository,
+    private val preferenciasRepository: PreferenciasRepository
+) : ViewModel() {
 
-    /**
-     * Un StateFlow que emite la lista completa de libros del usuario.
-     * Se obtiene directamente del repositorio y se convierte en un StateFlow "caliente".
-     * Esto significa que la UI puede observar este flujo y se actualizará automáticamente
-     * cada vez que la lista de libros cambie en la base de datos.
-     */
-    val libros: StateFlow<List<Libro>> = libroRepository.obtenerTodosLosLibros()
+    private val usuarioFlow: StateFlow<Usuario?> = preferenciasRepository.usuarioEmailFlow
+        .flatMapLatest { email ->
+            if (email == null) {
+                flowOf(null)
+            } else {
+                usuarioRepository.getUsuarioPorEmailFlow(email)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val libros: StateFlow<List<Libro>> = usuarioFlow
+        .flatMapLatest { usuario ->
+            if (usuario == null) {
+                flowOf(emptyList())
+            } else {
+                libroRepository.obtenerTodosLosLibros(usuario.id.toLong())
+            }
+        }
         .stateIn(
-            scope = viewModelScope, // El ciclo de vida del flujo está ligado al del ViewModel.
-            started = SharingStarted.WhileSubscribed(5000), // El flujo se mantiene activo 5s después de que la UI deja de observar.
-            initialValue = emptyList() // El valor inicial es una lista vacía, que se mostrará mientras se cargan los datos.
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
         )
 }
