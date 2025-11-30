@@ -7,7 +7,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.booksly.data.remote.RetrofitClient
+import com.example.booksly.data.remote.GoogleBooksApiService
 import com.example.booksly.data.remote.VolumeItem
 import com.example.booksly.data.repository.LibroRepository
 import com.example.booksly.data.repository.PreferenciasRepository
@@ -28,6 +28,7 @@ class AgregarLibroViewModel(
     private val libroRepository: LibroRepository,
     private val usuarioRepository: UsuarioRepository,
     private val preferenciasRepository: PreferenciasRepository,
+    private val booksApiService: GoogleBooksApiService,
     savedStateHandle: SavedStateHandle,
     private val application: Application
 ) : ViewModel() {
@@ -71,7 +72,7 @@ class AgregarLibroViewModel(
             }
             _isSearching.value = true
             try {
-                val response = RetrofitClient.instance.searchBooks(query)
+                val response = booksApiService.searchBooks(query)
                 if (response.isSuccessful) {
                     _searchResults.value = response.body()?.items ?: emptyList()
                 } else {

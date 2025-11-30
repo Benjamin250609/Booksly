@@ -2,6 +2,8 @@ package com.example.booksly.data
 
 import android.content.Context
 import com.example.booksly.data.remote.AuthApiService
+import com.example.booksly.data.remote.GoogleBooksApiService
+import com.example.booksly.data.remote.RetrofitClient
 import com.example.booksly.data.repository.AuthRepository
 import com.example.booksly.data.repository.LibroRepository
 import com.example.booksly.data.repository.NotaRepository
@@ -24,6 +26,7 @@ interface AppContainer {
     val notaRepository: NotaRepository
     val preferenciasRepository: PreferenciasRepository
     val authRepository: AuthRepository
+    val booksApiService: GoogleBooksApiService
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -59,6 +62,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     private val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
+    }
+
+    override val booksApiService: GoogleBooksApiService by lazy {
+        RetrofitClient.instance
     }
 
     override val authRepository: AuthRepository by lazy {

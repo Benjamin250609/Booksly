@@ -48,6 +48,12 @@ android {
         // Versión del compilador de Kotlin para Compose.
         kotlinCompilerExtensionVersion = "1.5.14"
     }
+    
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 // Configuración para el procesador de anotaciones de Kotlin.
@@ -88,7 +94,19 @@ dependencies {
     implementation(libs.coil.compose)
 
     // --- Dependencias de Pruebas ---
-    testImplementation(libs.junit)
+    // JUnit 5
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+
+    // MockK
+    testImplementation("io.mockk:mockk:1.13.11")
+
+    // Kotest
+    testImplementation("io.kotest:kotest-assertions-core:5.9.0")
+
+    // Coroutines Test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

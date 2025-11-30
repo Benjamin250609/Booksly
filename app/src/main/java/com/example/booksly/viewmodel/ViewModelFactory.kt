@@ -40,6 +40,7 @@ object AppViewModelProvider {
                 libroRepository = bookslyApplication().container.libroRepository,
                 usuarioRepository = bookslyApplication().container.usuarioRepository,
                 preferenciasRepository = bookslyApplication().container.preferenciasRepository,
+                booksApiService = bookslyApplication().container.booksApiService,
                 savedStateHandle = savedStateHandle,
                 application = bookslyApplication()
             )

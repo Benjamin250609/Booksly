@@ -15,7 +15,8 @@ import java.time.format.DateTimeParseException
 
 class RegistroViewModel(
     private val authRepository: AuthRepository,
-    private val usuarioRepository: UsuarioRepository
+    private val usuarioRepository: UsuarioRepository,
+    private val emailValidator: (String) -> Boolean = { email -> android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistroModel())
@@ -53,7 +54,7 @@ class RegistroViewModel(
             _uiState.update { it.copy(nombreError = "El nombre no puede estar vacío") }
             hayErrores = true
         }
-        if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (email.isBlank() || !emailValidator(email)) {
             _uiState.update { it.copy(emailError = "Correo inválido") }
             hayErrores = true
         }
