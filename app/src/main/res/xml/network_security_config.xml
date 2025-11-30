@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!--
+            Permitimos el tráfico HTTP (texto plano) únicamente a la IP
+            de nuestro servidor de desarrollo. Reemplaza esta IP si cambia.
+        -->
+        <domain includeSubdomains="true">100.30.140.229</domain>
+    </domain-config>
+</network-security-config>
