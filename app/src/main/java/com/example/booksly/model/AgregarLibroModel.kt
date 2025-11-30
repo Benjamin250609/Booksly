@@ -7,8 +7,8 @@ data class AgregarLibroModel(
     // --- Campos del Formulario ---
     val titulo: String = "",
     val autor: String = "",
-    val totalPaginas: String = "", // Se usa String para facilitar la entrada en el TextField, luego se convierte a Int.
-    val portada: String = "", // URL de la imagen de portada.
+    val totalPaginas: String = "",
+    val portada: String = "",
 
     // --- Errores de Validación ---
     val errorTitulo: String? = null,

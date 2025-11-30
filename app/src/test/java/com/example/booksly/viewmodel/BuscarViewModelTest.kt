@@ -81,7 +81,7 @@ class BuscarViewModelTest {
         viewModel.onTerminoBusquedaChange(termino)
 
         // Then
-        testDispatcher.scheduler.advanceTimeBy(301) // Avanza el tiempo para pasar el debounce
+        testDispatcher.scheduler.advanceTimeBy(301)
 
         with(viewModel.uiState.value) {
             terminoBusqueda shouldBe termino

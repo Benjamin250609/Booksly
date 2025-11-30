@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "libros")
 data class Libro(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val userId: Long, // ID del usuario al que pertenece el libro
+    val userId: Long,
     val titulo: String,
     val autor: String,
     val portada: String,

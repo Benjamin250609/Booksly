@@ -9,8 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// Extensión de Context para crear una única instancia de DataStore para toda la aplicación.
-// Esto asegura que se use el mismo archivo de preferencias ("settings") en toda la app.
+
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 /**
